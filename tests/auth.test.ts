@@ -24,12 +24,25 @@ test("authentication lifecycle", async () => {
             payload: {
                 name: "Authentication Test",
                 email,
-                password
+                password,
+                role: "ADMIN"
             }
         })
 
         assert.equal(signup.statusCode, 200)
+        
+        // Verify that clients cannot assign themselves privileged roles.
+        const createUser = await prisma.user.findUnique({
+            where: { email },
+            select: { role: true }
+        })
 
+        assert.ok(createUser, "Registered user should exist")
+        assert.equal(
+            createUser.role,
+            "MEMBER",
+            "New user must always recive the MEMBER role"
+        )
         // 2. Verify duplicate registration is rejected
         const duplicateSignup = await app.inject({
             method: "POST",
